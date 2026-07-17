@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#141416">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Tracker Kalistenik</title>
+<style>
+  :root{
+    --base:#141416; --base-2:#1b1b1e;
+    --surface:rgba(255,255,255,0.045); --surface-solid:#232326; --surface-hi:rgba(255,255,255,0.08);
+    --chalk:#f3f2ec; --chalk-dim:#93928d;
+    --mustard:#e0b94a; --mustard-dim:rgba(224,185,74,0.16);
+    --rust:#c15a45; --rust-dim:rgba(193,90,69,0.16);
+    --sage:#82a879; --sage-dim:rgba(130,168,121,0.16);
+    --line:rgba(255,255,255,0.08);
+    --font-display:'Arial Black', Arial, sans-serif;
+    --font-body:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+    --font-mono:'SF Mono','Consolas','Menlo',monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--base);color:var(--chalk);font-family:var(--font-body); overscroll-behavior-y:none;}
+  body{
+    padding-bottom:82px; min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(224,185,74,0.06), transparent 45%),
+      radial-gradient(circle at 100% 30%, rgba(193,90,69,0.05), transparent 40%),
+      var(--base);
+  }
+  header.top{
+    padding:20px 18px 16px; position:sticky; top:0; z-index:20;
+    background:rgba(20,20,22,0.82); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .top-row{display:flex; justify-content:space-between; align-items:flex-end;}
+  header.top .eyebrow{
+    font-family:var(--font-mono); font-size:10.5px; letter-spacing:2.5px;
+    color:var(--mustard); text-transform:uppercase; margin-bottom:5px; display:flex; align-items:center; gap:6px;
+  }
+  .streak-pill{
+    font-family:var(--font-mono); font-size:11px; background:var(--mustard-dim); color:var(--mustard);
+    padding:5px 11px; border-radius:20px; display:flex; align-items:center; gap:5px; white-space:nowrap;
+  }
+  header.top h1{font-family:var(--font-display); font-size:25px; letter-spacing:0.3px; margin:0; text-transform:uppercase;}
+  .level-badge{
+    font-family:var(--font-mono); font-size:10px; color:var(--base); background:var(--mustard);
+    padding:2px 8px; border-radius:10px; margin-left:8px; vertical-align:middle; text-transform:uppercase;
+  }
+  main{padding:16px; position:relative; min-height:60vh;}
+  .view{display:none;}
+  .view.active{display:block; animation:viewIn .28s cubic-bezier(.2,.8,.2,1);}
+  @keyframes viewIn{from{opacity:0; transform:translateY(10px) scale(.99);} to{opacity:1; transform:translateY(0) scale(1);}}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:14px; backdrop-filter:blur(6px);}
+  .section-title{
+    font-family:var(--font-display); font-size:13.5px; text-transform:uppercase;
+    letter-spacing:1px; margin:20px 0 10px; color:var(--mustard);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-title:first-child{margin-top:0;}
+  .section-sub{font-size:11.5px; color:var(--chalk-dim); margin:-6px 0 12px; line-height:1.5;}
+  .day-block{margin-bottom:16px;}
+  .day-block.today{
+    background:linear-gradient(135deg, rgba(224,185,74,0.08), transparent 60%);
+    border-radius:16px; padding:10px; margin:-10px -10px 16px;
+  }
+  .day-title{
+    font-family:var(--font-display); font-size:14.5px; text-transform:uppercase;
+    letter-spacing:1px; display:flex; align-items:center; gap:8px; margin-bottom:9px;
+    padding:0 2px 7px; border-bottom:1px solid var(--line);
+  }
+  .today-badge{
+    font-family:var(--font-mono); font-size:9px; background:var(--mustard); color:#141416;
+    padding:2px 7px; border-radius:10px; letter-spacing:0.5px; margin-left:auto;
+  }
+  .fokus-dot{width:8px;height:8px;border-radius:50%; flex-shrink:0;}
+  .move-card{padding:11px 13px; margin-bottom:7px; display:flex; justify-content:space-between; align-items:center; gap:10px;}
+  .move-name{font-weight:600; font-size:14.5px;}
+  .move-sub{font-size:11px; color:var(--chalk-dim); margin-top:2px; font-family:var(--font-mono);}
+  .move-rep-wrap{display:flex; flex-direction:column; align-items:flex-end; gap:3px;}
+  .move-rep{font-family:var(--font-mono); font-size:13px; color:var(--mustard); white-space:nowrap; text-align:right;}
+  .move-rest{font-family:var(--font-mono); font-size:10px; color:var(--chalk-dim); background:var(--surface-hi); padding:2px 7px; border-radius:20px; white-space:nowrap;}
+  .info-rest{padding:14px; margin-bottom:18px;}
+  .info-rest-title{font-family:var(--font-display); font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--mustard); margin-bottom:9px;}
+  .info-rest-row{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12px; color:var(--chalk-dim); padding:6px 0; border-bottom:1px dashed var(--line);}
+  .info-rest-row:last-child{border-bottom:none;}
+  .info-rest-row b{font-family:var(--font-mono); color:var(--chalk); font-size:12px; white-space:nowrap;}
+  .info-safety{padding:14px; margin-bottom:18px; border-color:var(--rust-dim);}
+  .info-safety-item{font-size:12px; color:var(--chalk-dim); padding:7px 0 7px 18px; position:relative; border-bottom:1px dashed var(--line);}
+  .info-safety-item:last-child{border-bottom:none;}
+  .info-safety-item::before{content:"⚠"; position:absolute; left:0; color:var(--rust); font-size:11px;}
+  .pattern-card{padding:14px; margin-bottom:12px;}
+  .pattern-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .pattern-name{font-family:var(--font-display); font-size:13.5px; text-transform:uppercase; letter-spacing:1px;}
+  .ladder{display:flex; gap:5px; margin-bottom:10px;}
+  .ladder-dot{flex:1; height:6px; border-radius:4px; background:var(--line);}
+  .ladder-dot.filled{background:var(--mustard);}
+  .ladder-dot.current{background:var(--sage);}
+  .pattern-current{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--surface-hi); border-radius:10px; padding:10px 12px; margin-bottom:8px;
+  }
+  .pattern-current .lbl{font-family:var(--font-mono); font-size:9.5px; color:var(--sage); text-transform:uppercase; letter-spacing:0.5px;}
+  .pattern-current .nm{font-weight:600; font-size:14px; margin-top:2px;}
+  .pattern-current .rp{font-family:var(--font-mono); font-size:12.5px; color:var(--mustard);}
+  .pattern-next{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    border:1px dashed var(--line); border-radius:10px; padding:10px 12px; opacity:0.85;
+  }
+  .pattern-next .lbl{font-family:var(--font-mono); font-size:9.5px; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:0.5px;}
+  .pattern-next .nm{font-weight:600; font-size:13.5px; margin-top:2px; color:var(--chalk-dim);}
+  .pattern-next .gate{font-size:11px; color:var(--chalk-dim); margin-top:3px;}
+  .level-hero{padding:20px 16px; margin-bottom:18px; text-align:center;}
+  .level-hero .cur{font-family:var(--font-mono); font-size:11px; color:var(--chalk-dim); letter-spacing:1.5px; text-transform:uppercase;}
+  .level-hero .name{font-family:var(--font-display); font-size:30px; color:var(--mustard); margin:6px 0; text-transform:uppercase;}
+  .level-dots{display:flex; justify-content:center; gap:6px; margin-bottom:14px;}
+  .level-dots span{width:9px; height:9px; border-radius:50%; background:var(--line); display:inline-block;}
+  .level-dots span.on{background:var(--mustard);}
+  .btn-row{display:flex; gap:8px;}
+  .btn-outline{
+    flex:1; background:var(--surface-solid); border:1px solid var(--line); color:var(--chalk);
+    font-family:var(--font-display); font-size:11.5px; letter-spacing:1px; text-transform:uppercase;
+    padding:11px; border-radius:9px; cursor:pointer;
+  }
+  .btn-outline:active{transform:scale(0.97);}
+  .test-form{padding:16px; margin-bottom:18px;}
+  .test-form .row2{display:flex; gap:8px; margin-bottom:10px;}
+  .test-form .row2 > *{flex:1;}
+  .test-note{font-size:11px; color:var(--chalk-dim); margin-bottom:10px; line-height:1.5;}
+  .split-option{padding:13px 14px; margin-bottom:9px; cursor:pointer; position:relative; border:1px solid var(--line);}
+  .split-option.selected{border-color:var(--mustard); background:rgba(224,185,74,0.06);}
+  .split-title{font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:space-between;}
+  .split-freq{font-family:var(--font-mono); font-size:10.5px; color:var(--mustard); background:var(--mustard-dim); padding:2px 8px; border-radius:20px;}
+  .split-basis{font-size:11.5px; color:var(--chalk-dim); margin-top:5px; line-height:1.4;}
+  .split-check{position:absolute; top:13px; right:14px; width:20px; height:20px; border-radius:6px; border:2px solid var(--chalk-dim); display:flex; align-items:center; justify-content:center; font-size:12px;}
+  .split-option.selected .split-check{border-color:var(--sage); color:var(--sage); background:var(--sage-dim);}
+  .baseline-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; margin-bottom:8px;}
+  .baseline-row label{font-size:13.5px; font-weight:600;}
+  .baseline-auto-tag{font-family:var(--font-mono); font-size:9.5px; color:var(--mustard); margin-top:2px;}
+  .baseline-row input{width:90px; text-align:right; font-family:var(--font-mono);}
+  .baseline-row input:disabled{color:var(--mustard); border-color:var(--mustard-dim); opacity:0.9;}
+  .backup-card{padding:16px; margin-bottom:18px;}
+  .backup-desc{font-size:12px; color:var(--chalk-dim); margin-bottom:12px; line-height:1.5;}
+  .import-btn{
+    display:block; width:100%; text-align:center; background:var(--surface-solid); color:var(--chalk);
+    border:1px solid var(--line); border-radius:10px; font-family:var(--font-display); font-size:13px;
+    letter-spacing:1.2px; text-transform:uppercase; padding:13px; margin-top:9px; cursor:pointer;
+  }
+  .import-btn:active{transform:scale(0.97);}
+  form.logform{padding:16px; margin-bottom:18px;}
+  form.logform .row{display:flex; gap:8px; margin-bottom:10px;}
+  form.logform .row > *{flex:1;}
+  label.mini{font-size:10px; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:0.6px; display:block; margin-bottom:4px;}
+  input, select, textarea{
+    width:100%; background:var(--surface-solid); border:1px solid var(--line); color:var(--chalk);
+    font-family:var(--font-body); font-size:13.5px; border-radius:8px; padding:9px 10px;
+  }
+  input:focus, select:focus, textarea:focus{outline:none; border-color:var(--mustard);}
+  textarea{resize:vertical; min-height:40px;}
+  button.primary{
+    width:100%; background:var(--mustard); color:#141416; border:none; border-radius:10px;
+    font-family:var(--font-display); font-size:13px; letter-spacing:1.2px; text-transform:uppercase;
+    padding:13px; margin-top:6px; cursor:pointer;
+  }
+  button.primary:active{transform:scale(0.97);}
+  .chart-card{padding:14px; margin-bottom:18px;}
+  .chart-title{font-size:11px; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; font-family:var(--font-mono);}
+  .bars{display:flex; align-items:flex-end; gap:6px; height:64px;}
+  .bar-col{flex:1; display:flex; flex-direction:column; align-items:center; gap:5px;}
+  .bar{width:100%; background:linear-gradient(180deg, var(--mustard), rgba(224,185,74,0.35)); border-radius:5px 5px 2px 2px; min-height:3px;}
+  .bar-lbl{font-family:var(--font-mono); font-size:9px; color:var(--chalk-dim);}
+  .log-wrap{position:relative; margin-bottom:9px; border-radius:14px; overflow:hidden;}
+  .log-del-bg{position:absolute; inset:0; background:var(--rust); display:flex; align-items:center; justify-content:flex-end; padding-right:20px; color:#fff; font-family:var(--font-display); font-size:12px; letter-spacing:1px;}
+  .log-entry{padding:12px 14px; position:relative; background:var(--base);}
+  .log-entry-top{display:flex; justify-content:space-between; align-items:baseline;}
+  .log-date{font-family:var(--font-mono); font-size:12px; color:var(--mustard);}
+  .log-status{font-size:10px; padding:3px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;}
+  .status-Selesai{background:var(--sage-dim); color:var(--sage);}
+  .status-Skip{background:var(--rust-dim); color:var(--rust);}
+  .status-Lupa{background:rgba(147,146,141,0.16); color:var(--chalk-dim);}
+  .log-gerakan{font-weight:600; font-size:14.5px; margin-top:4px;}
+  .log-sets{font-family:var(--font-mono); font-size:12.5px; color:var(--chalk-dim); margin-top:5px;}
+  .log-note{font-size:12px; color:var(--chalk-dim); margin-top:6px; font-style:italic;}
+  .swipe-hint{text-align:center; font-size:10.5px; color:var(--chalk-dim); margin:-6px 0 14px; font-family:var(--font-mono);}
+  .empty-state{text-align:center; padding:50px 20px; color:var(--chalk-dim); font-size:13px;}
+  .empty-state .big{font-size:36px; margin-bottom:10px; display:block; animation:float 2.4s ease-in-out infinite;}
+  @keyframes float{0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);}}
+  nav.bottom{
+    position:fixed; bottom:0; left:0; right:0; height:70px;
+    background:rgba(27,27,30,0.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border-top:1px solid var(--line); display:flex; z-index:30; padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav.bottom .indicator{
+    position:absolute; top:8px; height:calc(100% - 16px); width:calc(25% - 8px);
+    background:var(--mustard-dim); border-radius:12px; transition:transform .3s cubic-bezier(.2,.8,.2,1); left:4px;
+  }
+  nav.bottom button{
+    flex:1; background:none; border:none; color:var(--chalk-dim); z-index:1;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:4px; font-family:var(--font-body); font-size:9.5px; letter-spacing:0.2px;
+    text-transform:uppercase; cursor:pointer;
+  }
+  nav.bottom button:active{transform:scale(0.92);}
+  nav.bottom button .ico{font-size:19px;}
+  nav.bottom button.active{color:var(--mustard);}
+  nav.bottom button.active .ico{transform:translateY(-2px) scale(1.1);}
+  .save-toast{
+    position:fixed; bottom:88px; left:50%; transform:translateX(-50%) translateY(24px) scale(.9);
+    background:rgba(130,168,121,0.95); color:#152016; font-family:var(--font-mono); font-size:12px;
+    padding:9px 18px; border-radius:24px; opacity:0; pointer-events:none;
+    transition:all .3s cubic-bezier(.34,1.56,.64,1); z-index:40; box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  .save-toast.show{opacity:1; transform:translateX(-50%) translateY(0) scale(1);}
+  .confetti{position:fixed; width:6px; height:6px; pointer-events:none; z-index:50; border-radius:1px;}
+  ::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow">Home Program</div>
+      <h1 id="pageTitle">Jadwal<span class="level-badge" id="levelBadgeTop">-</span></h1>
+    </div>
+    <div class="streak-pill" id="streakPill">🔥 0 hari</div>
+  </div>
+</header>
+
+<main>
+  <section class="view active" id="view-jadwal"></section>
+  <section class="view" id="view-progres"></section>
+
+  <section class="view" id="view-log">
+    <div class="card chart-card">
+      <div class="chart-title">Volume 7 Hari Terakhir (Total Reps)</div>
+      <div class="bars" id="volBars"></div>
+    </div>
+    <form class="logform card" id="logForm">
+      <div class="row">
+        <div><label class="mini">Tanggal</label><input type="date" id="f-tanggal" required></div>
+        <div>
+          <label class="mini">Hari</label>
+          <select id="f-hari">
+            <option>Senin</option><option>Selasa</option><option>Rabu</option>
+            <option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option>
+          </select>
+        </div>
+      </div>
+      <div class="row"><div><label class="mini">Gerakan</label><select id="f-gerakan" required></select></div></div>
+      <div class="row">
+        <div><label class="mini">Set1</label><input type="number" id="f-s1" min="0"></div>
+        <div><label class="mini">Set2</label><input type="number" id="f-s2" min="0"></div>
+        <div><label class="mini">Set3</label><input type="number" id="f-s3" min="0"></div>
+        <div><label class="mini">Set4</label><input type="number" id="f-s4" min="0"></div>
+      </div>
+      <div class="row">
+        <div><label class="mini">RPE (1-10)</label><input type="number" id="f-rpe" min="1" max="10"></div>
+        <div>
+          <label class="mini">Status</label>
+          <select id="f-status"><option>Selesai</option><option>Skip</option><option>Lupa</option></select>
+        </div>
+      </div>
+      <label class="mini">Catatan</label>
+      <textarea id="f-catatan" placeholder="opsional..."></textarea>
+      <button type="submit" class="primary">+ Simpan Log</button>
+    </form>
+    <div class="swipe-hint" id="swipeHint">← geser kiri untuk hapus</div>
+    <div id="logList"></div>
+  </section>
+
+  <section class="view" id="view-profil">
+    <div class="card level-hero">
+      <div class="cur">Level Saat Ini</div>
+      <div class="name" id="levelHeroName">Newbie</div>
+      <div class="level-dots" id="levelDots"></div>
+      <div class="btn-row">
+        <button class="btn-outline" id="btnRetest">🔁 Tes Ulang</button>
+        <button class="btn-outline" id="btnManualLevel">✏️ Set Manual</button>
+      </div>
+    </div>
+    <div id="testFormWrap"></div>
+    <div id="manualLevelWrap"></div>
+
+    <div class="section-title">Pilih Struktur Mingguan</div>
+    <div class="section-sub">Berdasarkan riset & komunitas: r/bodyweightfitness, Convict Conditioning, Overcoming Gravity.</div>
+    <div id="splitList"></div>
+
+    <div class="section-title">Baseline Minggu 0</div>
+    <div id="baselineList"></div>
+
+    <div class="section-title">Backup Data</div>
+    <div class="card backup-card">
+      <div class="backup-desc">Data cuma tersimpan di HP ini. Export tiap minggu biar aman kalau ganti HP / cache kehapus.</div>
+      <button id="btnExport" class="primary">⬇️ Export Data (.json)</button>
+      <label class="import-btn" for="fileImport">⬆️ Import Data (.json)</label>
+      <input type="file" id="fileImport" accept="application/json" hidden>
+    </div>
+  </section>
+</main>
+
+<div class="save-toast" id="toast">✓ Tersimpan</div>
+
+<nav class="bottom">
+  <div class="indicator" id="navIndicator"></div>
+  <button data-view="jadwal" class="active"><span class="ico">📅</span>Jadwal</button>
+  <button data-view="progres"><span class="ico">🏆</span>Progres</button>
+  <button data-view="log"><span class="ico">📝</span>Log</button>
+  <button data-view="profil"><span class="ico">👤</span>Profil</button>
+</nav>
+
+<script>
+const LEVELS = ["Newbie","Beginner","Intermediate","Advanced","Master"];
+const LEVEL_ICON = ["🌱","🔹","🔸","🔥","👑"];
+
+const TEST_THRESHOLDS = {
+  pullup: [0, 1, 6, 11, 20],
+  pushup: [0, 10, 25, 40, 60],
+  pistol: [0, 1, 5, 9, 15],
+};
+function levelFromReps(val, arr){
+  let lvl = 0;
+  arr.forEach((t,i) => { if(val >= t) lvl = i; });
+  return lvl;
+}
+
+const PATTERN_LEVELS = {
+  PUSH: [
+    {name:"Push-up (lutut)", set:"3x12", gate:"3x12 form rapi, pinggul gak turun"},
+    {name:"Push-up standar", set:"4x max-2", gate:"Min 10 reps clean tiap set"},
+    {name:"Diamond push-up", set:"3x10", gate:"3x10 clean, siku stabil"},
+    {name:"Archer push-up", set:"3x6/sisi", gate:"3x6/sisi terkontrol"},
+    {name:"One-arm push-up progression", set:"3x3/sisi (dibantu)", gate:"20+ dip dulu"},
+  ],
+  PULL: [
+    {name:"Negative pull-up", set:"4x5 (turun 5 detik)", gate:"Kontrol turun 5 detik penuh"},
+    {name:"Assisted / Full pull-up", set:"4x max-2", gate:"1-5 reps bersih tanpa ayun"},
+    {name:"Pull-up", set:"4x max-2", gate:"8-10 reps bersih"},
+    {name:"Wide-grip pull-up", set:"3x6-8", gate:"Tanpa nyeri siku/bahu"},
+    {name:"One-arm pull-up progression", set:"3x3-5 (dibantu)", gate:"15+ pull-up bersih dulu"},
+  ],
+  SQUAT: [
+    {name:"Bodyweight squat", set:"4x15", gate:"Depth penuh, lutut stabil"},
+    {name:"Squat beban tas", set:"4x15", gate:"Tanpa nyeri lutut"},
+    {name:"Bulgarian split squat", set:"3x10/kaki", gate:"Seimbang kiri-kanan"},
+    {name:"Pistol squat (dibantu)", set:"3x5-8/kaki", gate:"5-8 reps/kaki bersih"},
+    {name:"Pistol squat clean", set:"3x10-15/kaki", gate:"15+ reps/kaki, landing terkontrol"},
+  ],
+  CORE: [
+    {name:"Knee tuck", set:"3x12", gate:"3x12 terkontrol"},
+    {name:"Hanging knee raise", set:"3x12", gate:"Tanpa ayun badan"},
+    {name:"Hanging leg raise", set:"3x10", gate:"Kaki lurus penuh"},
+    {name:"Toes-to-bar", set:"3x8", gate:"Kontak jari ke bar"},
+    {name:"L-sit + leg raise", set:"3x8", gate:"L-sit hold 15+ detik dulu"},
+  ],
+  HINGE: [
+    {name:"Glute bridge", set:"3x15", gate:"Squeeze glute penuh atas"},
+    {name:"Single-leg glute bridge", set:"3x12/kaki", gate:"Pinggul gak miring"},
+    {name:"Hip thrust beban tas", set:"3x15", gate:"ROM penuh terkontrol"},
+    {name:"Nordic curl (dibantu)", set:"3x6", gate:"Turun pelan, terkontrol"},
+    {name:"Nordic curl penuh", set:"3x8", gate:"Tanpa bantuan"},
+  ],
+  DIP: [
+    {name:"Bench dip (kaki tekuk)", set:"3x10", gate:"Siku 90°, gak nyeri bahu"},
+    {name:"Dip di kursi", set:"3x12", gate:"ROM penuh"},
+    {name:"Dip di kursi (kaki lurus)", set:"3x15", gate:"Lebih berat, form sama"},
+    {name:"Dip kaki diangkat", set:"3x12", gate:"Stabil, gak goyang"},
+    {name:"Weighted dip (tas beban)", set:"3x8", gate:"Tambah beban di tas"},
+  ],
+  ROW: [
+    {name:"Incline row (bar tinggi)", set:"3x12", gate:"Scapula ketarik penuh"},
+    {name:"Australian row", set:"3x12", gate:"Badan lurus, gak melengkung"},
+    {name:"Dumbbell tas rows", set:"3x15", gate:"Kontrol turun pelan"},
+    {name:"Archer row", set:"3x8/sisi", gate:"Seimbang kiri-kanan"},
+    {name:"One-arm row (tas berat)", set:"3x8/sisi", gate:"Beban cukup berat"},
+  ],
+};
+const PATTERN_LABEL = {PUSH:"Push", PULL:"Pull", SQUAT:"Squat", CORE:"Core", HINGE:"Hinge/Glute", DIP:"Dip", ROW:"Row"};
+const REST_BY_PATTERN = {PUSH:"60-90 dtk", DIP:"60-90 dtk", PULL:"90-120 dtk", ROW:"60-90 dtk", SQUAT:"90-120 dtk", HINGE:"60-90 dtk", CORE:"60-90 dtk", CARDIO:"30-45 dtk"};
+
+const HARI_ORDER = ["Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"];
+const SPLITS = {
+  rr3: {
+    label:"Full Body 3x (Gaya RR)",
+    freq:"3x / minggu",
+    basis:"r/bodyweightfitness Recommended Routine: full body tiap sesi, hari gak berurutan, cocok newbie-beginner.",
+    days:{Senin:["PUSH","PULL","SQUAT","CORE"], Selasa:[], Rabu:["PUSH","PULL","SQUAT","CORE"], Kamis:[], Jumat:["PUSH","PULL","SQUAT","CORE"], Sabtu:[], Minggu:[]},
+  },
+  split4: {
+    label:"Split 4 Hari",
+    freq:"4x / minggu",
+    basis:"Upper-lower split umum. Push/Pull terpisah biar volume per pola gerak lebih fokus.",
+    days:{Senin:["PUSH","DIP"], Selasa:["PULL","ROW"], Rabu:[], Kamis:["SQUAT","HINGE"], Jumat:["PUSH","PULL","CORE","CARDIO"], Sabtu:[], Minggu:[]},
+  },
+  cc3: {
+    label:"Convict Conditioning (Big Six)",
+    freq:"3x / minggu",
+    basis:"Paul Wade: kerja semua Big Six tiap sesi, naik level cuma kalau udah nyaman di step sekarang.",
+    days:{Senin:["PUSH","PULL","SQUAT","CORE","HINGE"], Selasa:[], Rabu:["PUSH","PULL","SQUAT","CORE","HINGE"], Kamis:[], Jumat:["PUSH","PULL","SQUAT","CORE","HINGE"], Sabtu:[], Minggu:[]},
+  },
+  ppl5: {
+    label:"PPL 5x (Advanced/Master)",
+    freq:"5x / minggu",
+    basis:"Overcoming Gravity: frekuensi lebih tinggi utk trainee berpengalaman, tiap pola gerak dapat waktu pulih sendiri.",
+    days:{Senin:["PUSH","DIP"], Selasa:["PULL","ROW"], Rabu:["SQUAT","HINGE","CORE"], Kamis:["PUSH","DIP"], Jumat:["PULL","ROW"], Sabtu:["SQUAT","HINGE","CORE"], Minggu:[]},
+  },
+};
+
+const BASELINE_ITEMS = ["Pull-up (full)","Push-up (standar)","Squat bodyweight","Plank (detik)","Chin-up"];
+const BASELINE_MAP = {"Pull-up (full)":"Pull-up","Push-up (standar)":"Push-up standar","Squat bodyweight":"Squat beban tas","Plank (detik)":"Plank","Chin-up":"Australian row"};
+
+let memStore = {};
+function storeGet(key, fb){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fb; }catch(e){ return memStore[key] ?? fb; } }
+function storeSet(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){ memStore[key] = val; } }
+function vibrate(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg || '✓ Tersimpan';
+  t.classList.add('show');
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(()=>t.classList.remove('show'), 1200);
+}
+function burstConfetti(x,y){
+  const colors = ['#e0b94a','#82a879','#c15a45','#f3f2ec'];
+  for(let i=0;i<14;i++){
+    const p = document.createElement('div');
+    p.className='confetti'; p.style.left=x+'px'; p.style.top=y+'px'; p.style.background=colors[i%colors.length];
+    document.body.appendChild(p);
+    const angle=(Math.PI*2*i)/14+Math.random()*0.5, dist=40+Math.random()*50;
+    const dx=Math.cos(angle)*dist, dy=Math.sin(angle)*dist-20;
+    p.animate([{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:`translate(${dx}px, ${dy+70}px) rotate(${Math.random()*360}deg)`,opacity:0}],
+      {duration:700+Math.random()*300, easing:'cubic-bezier(.2,.8,.2,1)'}).onfinish=()=>p.remove();
+  }
+}
+
+function getLevelIndex(){ return storeGet('level_index', null); }
+function setLevelIndex(idx, manual){
+  storeSet('level_index', idx);
+  storeSet('level_is_manual', !!manual);
+  renderAll();
+}
+function getSplitKey(){ return storeGet('split_key', 'split4'); }
+function setSplitKey(key){ storeSet('split_key', key); renderAll(); }
+
+function computeLevelFromTest(pullup, pushup, pistol){
+  const lp = levelFromReps(pullup, TEST_THRESHOLDS.pullup);
+  const lu = levelFromReps(pushup, TEST_THRESHOLDS.pushup);
+  const ls = levelFromReps(pistol, TEST_THRESHOLDS.pistol);
+  return Math.min(lp, lu, ls);
+}
+
+function todayHari(){
+  const jsDay = new Date().getDay();
+  const map = [6,0,1,2,3,4,5];
+  return HARI_ORDER[map[jsDay]];
+}
+function computeStreak(){
+  const logs = storeGet('log_entries', []);
+  const doneDates = new Set(logs.filter(l=>l.status==='Selesai').map(l=>l.tanggal));
+  let streak=0, d=new Date();
+  for(let i=0;i<365;i++){
+    const iso=d.toISOString().slice(0,10);
+    if(doneDates.has(iso)){ streak++; d.setDate(d.getDate()-1); } else break;
+  }
+  return streak;
+}
+function renderStreak(){ document.getElementById('streakPill').textContent = `🔥 ${computeStreak()} hari`; }
+
+function renderJadwal(){
+  let levelIdx = getLevelIndex();
+  if(levelIdx === null){
+    document.getElementById('view-jadwal').innerHTML = `
+      <div class="empty-state card" style="padding:40px 20px;">
+        <span class="big">🧪</span>
+        Belum ada level. Isi tes dulu di tab <b>Profil</b> biar jadwal disesuaikan.
+      </div>`;
+    return;
+  }
+  const splitKey = getSplitKey();
+  const split = SPLITS[splitKey];
+  const today = todayHari();
+  let pullCountThisWeek = 0;
+
+  let html = `
+    <div class="card info-rest">
+      <div class="info-rest-title">⏱️ Waktu Rest</div>
+      <div class="info-rest-row"><span>Compound berat (pull-up, squat berat)</span><b>90-120 dtk</b></div>
+      <div class="info-rest-row"><span>Push-up, dip, isolasi</span><b>60-90 dtk</b></div>
+      <div class="info-rest-row"><span>Burpee / HIIT</span><b>30-45 dtk</b></div>
+      <div class="info-rest-row"><span>Antar hari, pola gerak sama</span><b>min. 48 jam</b></div>
+    </div>
+    <div class="card info-safety">
+      <div class="info-rest-title">🦾 Proteksi Tendon Siku/Bahu</div>
+      <div class="info-safety-item">Jangan gagal total tiap set. Sisakan 1-3 rep ("max-2").</div>
+      <div class="info-safety-item">Kalau Pull muncul 2x+/minggu, gonta-ganti grip tiap sesi.</div>
+      <div class="info-safety-item">Nyeri siku/bahu &gt;24 jam? Turunkan volume, jangan stop total.</div>
+      <div class="info-safety-item">Kembali dari libur &gt;1 minggu? Mulai 50% volume biasa.</div>
+    </div>
+  `;
+
+  HARI_ORDER.forEach(hari => {
+    const patterns = split.days[hari] || [];
+    const isToday = hari === today;
+    if(patterns.length === 0){
+      html += `
+        <div class="day-block ${isToday?'today':''}">
+          <div class="day-title"><span class="fokus-dot" style="background:var(--chalk-dim)"></span>${hari}
+            ${isToday?'<span class="today-badge">HARI INI</span>':''}
+          </div>
+          <div class="move-card card"><div class="move-name">Istirahat</div></div>
+        </div>`;
+      return;
+    }
+    let moves = '';
+    patterns.forEach(pat => {
+      if(pat === 'CARDIO'){
+        moves += `
+          <div class="move-card card">
+            <div><div class="move-name">Burpee</div><div class="move-sub">Cardio/HIIT</div></div>
+            <div class="move-rep-wrap"><div class="move-rep">4x10</div><div class="move-rest">⏱ ${REST_BY_PATTERN.CARDIO}</div></div>
+          </div>`;
+        return;
+      }
+      const ex = PATTERN_LEVELS[pat][levelIdx];
+      let name = ex.name;
+      if(pat === 'PULL'){
+        pullCountThisWeek++;
+        name += (pullCountThisWeek % 2 === 0) ? " (grip netral)" : " (grip standar)";
+      }
+      const rest = REST_BY_PATTERN[pat] || '60-90 dtk';
+      moves += `
+        <div class="move-card card">
+          <div><div class="move-name">${name}</div><div class="move-sub">${PATTERN_LABEL[pat]||pat}</div></div>
+          <div class="move-rep-wrap"><div class="move-rep">${ex.set}</div><div class="move-rest">⏱ ${rest}</div></div>
+        </div>`;
+    });
+    html += `
+      <div class="day-block ${isToday?'today':''}">
+        <div class="day-title"><span class="fokus-dot" style="background:var(--mustard)"></span>${hari}
+          ${isToday?'<span class="today-badge">HARI INI</span>':''}
+        </div>
+        ${moves}
+      </div>`;
+  });
+
+  document.getElementById('view-jadwal').innerHTML = html;
+}
+
+function renderProgres(){
+  const levelIdx = getLevelIndex();
+  const el = document.getElementById('view-progres');
+  if(levelIdx === null){
+    el.innerHTML = `<div class="empty-state card" style="padding:40px 20px;"><span class="big">🏆</span>Isi tes level dulu di tab Profil.</div>`;
+    return;
+  }
+  let html = `<div class="section-sub">Progres per pola gerak. Naik level kalau kriteria (gate) tercapai, bukan cuma ikut kalender.</div>`;
+  for(const pat in PATTERN_LEVELS){
+    const arr = PATTERN_LEVELS[pat];
+    const cur = arr[levelIdx];
+    const next = arr[levelIdx+1];
+    let dots = '';
+    for(let i=0;i<LEVELS.length;i++){
+      let cls = 'ladder-dot';
+      if(i < levelIdx) cls += ' filled';
+      if(i === levelIdx) cls += ' current';
+      dots += `<div class="${cls}"></div>`;
+    }
+    html += `
+      <div class="card pattern-card">
+        <div class="pattern-head">
+          <div class="pattern-name">${PATTERN_LABEL[pat]}</div>
+          <div style="font-family:var(--font-mono); font-size:10.5px; color:var(--chalk-dim);">${LEVELS[levelIdx]}</div>
+        </div>
+        <div class="ladder">${dots}</div>
+        <div class="pattern-current">
+          <div><div class="lbl">Sekarang</div><div class="nm">${cur.name}</div></div>
+          <div class="rp">${cur.set}</div>
+        </div>
+        ${next ? `
+        <div class="pattern-next">
+          <div>
+            <div class="lbl">Level Berikut: ${LEVELS[levelIdx+1]}</div>
+            <div class="nm">${next.name}</div>
+            <div class="gate">✅ Gate: ${next.gate}</div>
+          </div>
+        </div>` : `<div class="pattern-next"><div class="nm" style="color:var(--mustard)">👑 Sudah Master</div></div>`}
+      </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderLevelHero(){
+  const idx = getLevelIndex();
+  document.getElementById('levelHeroName').textContent = idx===null ? 'Belum Dites' : `${LEVEL_ICON[idx]} ${LEVELS[idx]}`;
+  const dotsEl = document.getElementById('levelDots');
+  dotsEl.innerHTML = LEVELS.map((_,i) => `<span class="${idx!==null && i<=idx ? 'on':''}"></span>`).join('');
+  document.getElementById('levelBadgeTop').textContent = idx!==null ? LEVELS[idx] : '-';
+}
+
+function renderTestForm(show){
+  const wrap = document.getElementById('testFormWrap');
+  if(!show){ wrap.innerHTML=''; return; }
+  wrap.innerHTML = `
+    <div class="card test-form">
+      <div class="test-note">Isi max reps bersih (bukan ngasal/ngayun). Level dihitung dari yang PALING LEMAH di antara 3 gerakan ini — biar latihan fokus ke titik lemah dulu.</div>
+      <div class="row2">
+        <div><label class="mini">Pull-up (max)</label><input type="number" id="t-pullup" min="0" placeholder="0"></div>
+        <div><label class="mini">Push-up (max)</label><input type="number" id="t-pushup" min="0" placeholder="0"></div>
+        <div><label class="mini">Pistol squat/kaki</label><input type="number" id="t-pistol" min="0" placeholder="0"></div>
+      </div>
+      <button class="primary" id="btnSubmitTest">Hitung Level</button>
+    </div>`;
+  document.getElementById('btnSubmitTest').addEventListener('click', () => {
+    const pu = Number(document.getElementById('t-pullup').value)||0;
+    const ps = Number(document.getElementById('t-pushup').value)||0;
+    const pi = Number(document.getElementById('t-pistol').value)||0;
+    const idx = computeLevelFromTest(pu, ps, pi);
+    setLevelIndex(idx, false);
+    storeSet('test_last_values', {pullup:pu, pushup:ps, pistol:pi, tested_at:new Date().toISOString().slice(0,10)});
+    vibrate(15);
+    showToast(`Level: ${LEVELS[idx]}`);
+    renderTestForm(false);
+  });
+}
+
+function renderManualLevel(show){
+  const wrap = document.getElementById('manualLevelWrap');
+  if(!show){ wrap.innerHTML=''; return; }
+  const idx = getLevelIndex() ?? 0;
+  wrap.innerHTML = `
+    <div class="card test-form">
+      <label class="mini">Pilih Level Manual</label>
+      <select id="manualLevelSelect">
+        ${LEVELS.map((l,i)=>`<option value="${i}" ${i===idx?'selected':''}>${LEVEL_ICON[i]} ${l}</option>`).join('')}
+      </select>
+      <button class="primary" id="btnSaveManual">Simpan Level</button>
+    </div>`;
+  document.getElementById('btnSaveManual').addEventListener('click', () => {
+    const idx = Number(document.getElementById('manualLevelSelect').value);
+    setLevelIndex(idx, true);
+    vibrate(15);
+    showToast(`Level diset: ${LEVELS[idx]}`);
+    renderManualLevel(false);
+  });
+}
+
+function renderSplitList(){
+  const cur = getSplitKey();
+  const el = document.getElementById('splitList');
+  el.innerHTML = Object.keys(SPLITS).map(key => {
+    const s = SPLITS[key];
+    return `
+      <div class="card split-option ${key===cur?'selected':''}" data-key="${key}">
+        <div class="split-check">${key===cur?'✓':''}</div>
+        <div class="split-title">${s.label}</div>
+        <div style="margin-top:6px;"><span class="split-freq">${s.freq}</span></div>
+        <div class="split-basis">${s.basis}</div>
+      </div>`;
+  }).join('');
+  el.querySelectorAll('.split-option').forEach(card => {
+    card.addEventListener('click', () => {
+      setSplitKey(card.dataset.key);
+      vibrate(10);
+      showToast('✓ Struktur diganti');
+    });
+  });
+}
+
+function renderBaseline(){
+  const vals = storeGet('baseline_vals', {});
+  const logs = storeGet('log_entries', []);
+  const todayIso = new Date().toISOString().slice(0,10);
+  const el = document.getElementById('baselineList');
+  el.innerHTML = BASELINE_ITEMS.map(name => {
+    const gerakanName = BASELINE_MAP[name];
+    const todays = logs.filter(l => l.tanggal === todayIso && l.gerakan === gerakanName);
+    if(todays.length > 0){
+      const last = todays[todays.length-1];
+      const isPlank = name.includes('Plank');
+      const setsNum = [last.s1,last.s2,last.s3,last.s4].map(x=>Number(x)||0);
+      const value = isPlank ? Math.max(...setsNum) : setsNum.reduce((a,b)=>a+b,0);
+      return `
+        <div class="baseline-row card">
+          <div><label>${name}</label><div class="baseline-auto-tag">🔄 auto dari log hari ini</div></div>
+          <input type="number" value="${value}" disabled>
+        </div>`;
+    }
+    return `
+      <div class="baseline-row card">
+        <label>${name}</label>
+        <input type="number" data-name="${name}" value="${vals[name] ?? ''}" placeholder="0">
+      </div>`;
+  }).join('');
+  el.querySelectorAll('input:not([disabled])').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const v = storeGet('baseline_vals', {});
+      v[inp.dataset.name] = inp.value;
+      storeSet('baseline_vals', v);
+      showToast();
+    });
+  });
+}
+
+function renderVolumeChart(){
+  const logs = storeGet('log_entries', []);
+  const days = [];
+  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+  const totals = days.map(iso => logs.filter(l=>l.tanggal===iso).reduce((sum,l) => sum + [l.s1,l.s2,l.s3,l.s4].reduce((a,b)=>a+(Number(b)||0),0), 0));
+  const max = Math.max(...totals, 1);
+  document.getElementById('volBars').innerHTML = days.map((iso,i) => {
+    const h = Math.max((totals[i]/max)*100, totals[i]>0?8:2);
+    const lbl = new Date(iso).toLocaleDateString('id-ID',{weekday:'short'}).slice(0,2);
+    return `<div class="bar-col"><div class="bar" style="height:${h}%"></div><div class="bar-lbl">${lbl}</div></div>`;
+  }).join('');
+}
+
+function renderLog(){
+  const logs = storeGet('log_entries', []);
+  const el = document.getElementById('logList');
+  document.getElementById('swipeHint').style.display = logs.length ? 'block' : 'none';
+  if(logs.length === 0){
+    el.innerHTML = `<div class="empty-state"><span class="big">🗒️</span>Belum ada log.<br>Isi form di atas tiap selesai latihan.</div>`;
+    renderVolumeChart();
+    return;
+  }
+  const sorted = [...logs].sort((a,b) => b.tanggal.localeCompare(a.tanggal));
+  el.innerHTML = sorted.map(l => {
+    const totalReps = [l.s1,l.s2,l.s3,l.s4].reduce((a,b) => a + (Number(b)||0), 0);
+    return `
+    <div class="log-wrap" data-id="${l.id}">
+      <div class="log-del-bg">HAPUS →</div>
+      <div class="log-entry card">
+        <div class="log-entry-top">
+          <span class="log-date">${l.tanggal} · ${l.hari}</span>
+          <span class="log-status status-${l.status}">${l.status}</span>
+        </div>
+        <div class="log-gerakan">${l.gerakan}</div>
+        <div class="log-sets">${[l.s1,l.s2,l.s3,l.s4].filter(x=>x!=='').join(' / ') || '-'} &nbsp;·&nbsp; Total: ${totalReps} reps${l.rpe ? ' · RPE '+l.rpe : ''}</div>
+        ${l.catatan ? `<div class="log-note">"${l.catatan}"</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.log-wrap').forEach(wrap => {
+    const card = wrap.querySelector('.log-entry');
+    let startX=0, curX=0, dragging=false;
+    wrap.addEventListener('touchstart', e => { startX=e.touches[0].clientX; dragging=true; card.style.transition='none'; }, {passive:true});
+    wrap.addEventListener('touchmove', e => {
+      if(!dragging) return;
+      curX = e.touches[0].clientX - startX;
+      if(curX<0) card.style.transform = `translateX(${Math.max(curX,-100)}px)`;
+    }, {passive:true});
+    wrap.addEventListener('touchend', () => {
+      dragging=false; card.style.transition='transform .25s ease';
+      if(curX < -70){
+        card.style.transform='translateX(-100%)';
+        setTimeout(() => {
+          let logs = storeGet('log_entries', []);
+          logs = logs.filter(l => String(l.id) !== wrap.dataset.id);
+          storeSet('log_entries', logs);
+          vibrate(15);
+          renderLog(); renderStreak(); renderBaseline();
+        }, 200);
+      } else { card.style.transform='translateX(0)'; }
+      curX=0;
+    });
+  });
+  renderVolumeChart();
+}
+
+function buildGerakanOptions(){
+  const set = new Set();
+  for(const pat in PATTERN_LEVELS){ PATTERN_LEVELS[pat].forEach(row => set.add(row.name)); }
+  set.add("Burpee"); set.add("Plank"); set.add("Jalan kaki + stretching");
+  return [...set];
+}
+const GERAKAN_OPTIONS = buildGerakanOptions();
+
+document.getElementById('logForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const logs = storeGet('log_entries', []);
+  logs.push({
+    id: Date.now(),
+    tanggal: document.getElementById('f-tanggal').value,
+    hari: document.getElementById('f-hari').value,
+    gerakan: document.getElementById('f-gerakan').value,
+    s1: document.getElementById('f-s1').value,
+    s2: document.getElementById('f-s2').value,
+    s3: document.getElementById('f-s3').value,
+    s4: document.getElementById('f-s4').value,
+    rpe: document.getElementById('f-rpe').value,
+    status: document.getElementById('f-status').value,
+    catatan: document.getElementById('f-catatan').value,
+  });
+  storeSet('log_entries', logs);
+  vibrate(12);
+  showToast('✓ Log disimpan');
+  e.target.reset();
+  document.getElementById('f-tanggal').valueAsDate = new Date();
+  renderLog(); renderStreak(); renderBaseline();
+});
+
+document.getElementById('btnExport').addEventListener('click', () => {
+  const data = {
+    level_index: storeGet('level_index', null),
+    level_is_manual: storeGet('level_is_manual', false),
+    split_key: storeGet('split_key', 'split4'),
+    test_last_values: storeGet('test_last_values', null),
+    baseline_vals: storeGet('baseline_vals', {}),
+    log_entries: storeGet('log_entries', []),
+    exported_at: new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `tracker-kalistenik-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  vibrate(12); showToast('⬇️ Backup diunduh');
+});
+document.getElementById('fileImport').addEventListener('change', e => {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(data.level_index !== undefined) storeSet('level_index', data.level_index);
+      if(data.level_is_manual !== undefined) storeSet('level_is_manual', data.level_is_manual);
+      if(data.split_key) storeSet('split_key', data.split_key);
+      if(data.test_last_values) storeSet('test_last_values', data.test_last_values);
+      if(data.baseline_vals) storeSet('baseline_vals', data.baseline_vals);
+      if(data.log_entries) storeSet('log_entries', data.log_entries);
+      renderAll();
+      vibrate(15); showToast('✓ Data dipulihkan');
+    }catch(err){ showToast('✗ File tidak valid'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+document.getElementById('btnRetest').addEventListener('click', () => {
+  renderManualLevel(false);
+  const wrap = document.getElementById('testFormWrap');
+  renderTestForm(wrap.innerHTML === '');
+});
+document.getElementById('btnManualLevel').addEventListener('click', () => {
+  renderTestForm(false);
+  const wrap = document.getElementById('manualLevelWrap');
+  renderManualLevel(wrap.innerHTML === '');
+});
+
+const titles = {jadwal:"Jadwal", progres:"Progres", log:"Log Latihan", profil:"Profil"};
+document.querySelectorAll('nav.bottom button').forEach((btn, idx) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav.bottom button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    btn.classList.add('active');
+    const v = btn.dataset.view;
+    document.getElementById('view-' + v).classList.add('active');
+    const idxLvl = getLevelIndex();
+    document.getElementById('pageTitle').innerHTML = titles[v] + `<span class="level-badge" id="levelBadgeTop">${idxLvl!==null ? LEVELS[idxLvl] : '-'}</span>`;
+    document.getElementById('navIndicator').style.transform = `translateX(${idx*100}%)`;
+    vibrate(8);
+  });
+});
+
+function renderAll(){
+  document.getElementById('f-gerakan').innerHTML = GERAKAN_OPTIONS.map(g => `<option>${g}</option>`).join('');
+  renderJadwal();
+  renderProgres();
+  renderLevelHero();
+  renderSplitList();
+  renderBaseline();
+  renderLog();
+  renderStreak();
+}
+document.getElementById('f-tanggal').valueAsDate = new Date();
+renderAll();
+if(getLevelIndex() === null){
+  document.querySelector('nav.bottom button[data-view="profil"]').click();
+  renderTestForm(true);
+}
+</script>
+</body>
+</html>
